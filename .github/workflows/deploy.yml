@@ -1,0 +1,28 @@
+name: build-and-deploy
+on:
+  push:
+    branches: [main]
+    paths: ['tools/**', '.github/workflows/deploy.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: live
+      - run: base64 -d tools/contacts_compact.b64 | gunzip > tools/contacts_compact.tsv
+      - run: python3 tools/build_site.py live out
+      - name: deploy to gh-pages
+        run: |
+          cd out
+          git init -b gh-pages
+          git config user.name "moby-bot"
+          git config user.email "moby@triplewhale.com"
+          git add -A
+          git commit -m "Bulk CommerceNext microsites (853 new pages + hub update)"
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
